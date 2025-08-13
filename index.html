@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Author Resolver — Single or “Nothing Found”</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="color-scheme" content="dark" />
+  <meta name="theme-color" content="#0b1e47" />
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <style>
+    body {
+      margin: 0;
+      font-family: system-ui, Arial, sans-serif;
+      background-color: #0b1e47;
+      color: #e9eef8;
+      padding: 2rem;
+    }
+    h1 { color: #ffd166; }
+    .result, .tests {
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 12px;
+      padding: 1rem;
+      margin-bottom: 1rem;
+    }
+    .highlight { color: #ffd166; font-weight: bold; }
+    pre {
+      background: #0a0f1f;
+      padding: 1rem;
+      border-radius: 8px;
+      overflow-x: auto;
+    }
+    .pass { color: #7ee787; }
+    .fail { color: #ff7b72; }
+  </style>
+</head>
+<body>
+  <h1>Author Resolver</h1>
+  <div class="result">
+    <p>Resolved Author:</p>
+    <div id="output">(resolving…)</div>
+  </div>
+  <div class="tests">
+    <h2>Integrity Checks</h2>
+    <pre id="test-results">Running…</pre>
+  </div>
+
+  <script>
+    const AUTHORS = ["Margaret Atwood"];
+
+    function resolveAuthor(list) {
+      const source = Array.isArray(list) ? list : AUTHORS;
+      const normalized = (source || [])
+        .map(s => (typeof s === 'string' ? s.trim() : ''))
+        .filter(Boolean);
+      if (normalized.length === 0) return "Nothing Found";
+      const seen = new Map();
+      for (const name of normalized) {
+        const key = name.toLowerCase();
+        if (!seen.has(key)) seen.set(key, name);
+      }
+      return seen.size === 1 ? [...seen.values()][0] : "Nothing Found";
+    }
+
+    function render() {
+      document.getElementById("output").innerHTML = '<span class="highlight">' + resolveAuthor() + '</span>';
+    }
+
+    function runTests() {
+      const lines = [];
+      let failures = 0;
+      const add = (ok, msg) => { lines.push((ok ? '✔ ' : '✖ ') + msg); if (!ok) failures++; };
+      try { add(typeof resolveAuthor === 'function', 'resolveAuthor is a function'); } catch(e){ add(false, e.message); }
+      try { add(resolveAuthor(["Toni Morrison"]) === "Toni Morrison", 'Single name resolves correctly'); } catch(e){ add(false, e.message); }
+      try { add(resolveAuthor(["A", "B"]) === "Nothing Found", 'Multiple names -> Nothing Found'); } catch(e){ add(false, e.message); }
+      try { add(resolveAuthor([]) === "Nothing Found", 'Empty list -> Nothing Found'); } catch(e){ add(false, e.message); }
+      document.getElementById('test-results').innerHTML =
+        lines.map(l => l.startsWith('✔') ? '<span class="pass">' + l + '</span>' : '<span class="fail">' + l + '</span>').join('\n')
+        + '\n\n' + (failures ? ('Failures: ' + failures) : 'All tests passed 🎉');
+    }
+
+    render();
+    runTests();
+  </script>
+</body>
+</html>
